@@ -103,7 +103,7 @@ def format_annotation(annotation, fully_qualified: bool = False) -> str:
     # Type variables are also handled specially
     try:
         if isinstance(annotation, TypeVar) and annotation is not AnyStr:
-            return '\\' + repr(annotation)
+            return annotation.__name__
     except TypeError:
         pass
 
