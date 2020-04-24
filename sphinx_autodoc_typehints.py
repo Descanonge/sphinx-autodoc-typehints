@@ -118,16 +118,25 @@ def format_annotation(annotation, fully_qualified: bool = False) -> str:
     if module == 'typing_extensions':
         module = 'typing'
 
-    full_name = class_name
+    full_name = (module + '.' + class_name) if module != 'builtins' else class_name
     args_format = '\\[{}]'
     formatted_args = ''
+
+    # Some types require special handling
+    if full_name == 'typing.Union' and len(args) == 2 and type(None) in args:
+        args = tuple(x for x in args if x is not type(None))  # noqa: E721
+    elif full_name == 'typing.Callable' and args and args[0] is not ...:
+        formatted_args = '\\[\\[' + ', '.join(format_annotation(arg) for arg in args[:-1]) + ']'
+        formatted_args += ', ' + format_annotation(args[-1]) + ']'
+    elif full_name == 'typing.Literal':
+        formatted_args = '\\[' + ', '.join(repr(arg) for arg in args) + ']'
 
     if args and not formatted_args:
         formatted_args = args_format.format(', '.join(format_annotation(arg, fully_qualified)
                                                       for arg in args))
 
-    return '{full_name}{formatted_args}'.format(full_name=full_name,
-                                                formatted_args=formatted_args)
+    return '{class_name}{formatted_args}'.format(class_name=class_name,
+                                                 formatted_args=formatted_args)
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
