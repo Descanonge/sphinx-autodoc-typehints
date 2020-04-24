@@ -418,8 +418,25 @@ def process_docstring(app, what, name, obj, options, lines):
                 annotation, fully_qualified=app.config.typehints_fully_qualified)
 
             searchfor = ':param {}:'.format(argname)
+            searchfor_type = ':type {}:'.format(argname)
             insert_index = None
 
+            append_opt = ''
+            do_not_add = False
+            for i, line in enumerate(lines):
+                if line.startswith(searchfor_type):
+                    end = line[len(searchfor_type):].strip()
+                    if end == 'optional':
+                        append_opt = ', optional'
+                        lines.pop(i)
+                    elif end == '':
+                        lines.pop(i)
+                    else:
+                        do_not_add = True
+                    break
+
+            if do_not_add:
+                continue
             for i, line in enumerate(lines):
                 if line.startswith(searchfor):
                     insert_index = i
@@ -432,7 +449,8 @@ def process_docstring(app, what, name, obj, options, lines):
             if insert_index is not None:
                 lines.insert(
                     insert_index,
-                    ':type {}: {}'.format(argname, formatted_annotation)
+                    ':type {}: {}'.format(argname,
+                                          formatted_annotation + append_opt)
                 )
 
         if 'return' in type_hints and not inspect.isclass(original_obj):
