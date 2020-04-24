@@ -1,6 +1,8 @@
 sphinx-autodoc-typehints
 ========================
 
+Fork for removing formatting of annotations.
+
 This extension allows you to use Python 3 annotations for documenting acceptable argument types
 and return value types of functions. This allows you to use type hints in a very natural fashion,
 allowing you to migrate from this:
