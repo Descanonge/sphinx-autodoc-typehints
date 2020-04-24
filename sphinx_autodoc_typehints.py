@@ -2,7 +2,7 @@ import inspect
 import sys
 import textwrap
 import typing
-from typing import get_type_hints, TypeVar, Any, AnyStr, Tuple
+from typing import TypeVar, Any, AnyStr, Tuple
 
 from sphinx.util import logging
 from sphinx.util.inspect import Signature
@@ -188,6 +188,60 @@ def process_signature(app, what: str, name: str, obj, options, signature, return
         return_annotation=inspect.Signature.empty)
 
     return signature.format_args().replace('\\', '\\\\'), None
+
+def get_type_hints(obj, globalns=None, localns=None):
+    """Get type hints.
+
+    Copied from typing (24/04/2020)
+    Removed part that had Optional[hint] when the default value is None.
+    """
+
+    if getattr(obj, '__no_type_check__', None):
+        return {}
+    # Classes require a special treatment.
+    if isinstance(obj, type):
+        hints = {}
+        for base in reversed(obj.__mro__):
+            if globalns is None:
+                base_globals = sys.modules[base.__module__].__dict__
+            else:
+                base_globals = globalns
+            ann = base.__dict__.get('__annotations__', {})
+            for name, value in ann.items():
+                if value is None:
+                    value = type(None)
+                if isinstance(value, str):
+                    value = typing.ForwardRef(value, is_argument=False)
+                value = typing._eval_type(value, base_globals, localns)
+                hints[name] = value
+        return hints
+
+    if globalns is None:
+        if isinstance(obj, typing.types.ModuleType):
+            globalns = obj.__dict__
+        else:
+            globalns = getattr(obj, '__globals__', {})
+        if localns is None:
+            localns = globalns
+    elif localns is None:
+        localns = globalns
+    hints = getattr(obj, '__annotations__', None)
+    if hints is None:
+        # Return empty annotations for something that _could_ have them.
+        if isinstance(obj, typing._allowed_types):
+            return {}
+        else:
+            raise TypeError('{!r} is not a module, class, method, '
+                            'or function.'.format(obj))
+    hints = dict(hints)
+    for name, value in hints.items():
+        if value is None:
+            value = type(None)
+        if isinstance(value, str):
+            value = typing.ForwardRef(value)
+        value = typing._eval_type(value, globalns, localns)
+        hints[name] = value
+    return hints
 
 
 def get_all_type_hints(obj, name):
