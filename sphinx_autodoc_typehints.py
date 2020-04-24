@@ -118,32 +118,16 @@ def format_annotation(annotation, fully_qualified: bool = False) -> str:
     if module == 'typing_extensions':
         module = 'typing'
 
-    full_name = (module + '.' + class_name) if module != 'builtins' else class_name
-    prefix = '' if fully_qualified or full_name == class_name else '~'
-    role = 'data' if class_name in pydata_annotations else 'class'
+    full_name = class_name
     args_format = '\\[{}]'
     formatted_args = ''
-
-    # Some types require special handling
-    if full_name == 'typing.NewType':
-        args_format = '\\(:py:data:`~{name}`, {{}})'.format(prefix=prefix,
-                                                            name=annotation.__name__)
-        role = 'func'
-    elif full_name == 'typing.Union' and len(args) == 2 and type(None) in args:
-        full_name = 'typing.Optional'
-        args = tuple(x for x in args if x is not type(None))  # noqa: E721
-    elif full_name == 'typing.Callable' and args and args[0] is not ...:
-        formatted_args = '\\[\\[' + ', '.join(format_annotation(arg) for arg in args[:-1]) + ']'
-        formatted_args += ', ' + format_annotation(args[-1]) + ']'
-    elif full_name == 'typing.Literal':
-        formatted_args = '\\[' + ', '.join(repr(arg) for arg in args) + ']'
 
     if args and not formatted_args:
         formatted_args = args_format.format(', '.join(format_annotation(arg, fully_qualified)
                                                       for arg in args))
 
-    return ':py:{role}:`{prefix}{full_name}`{formatted_args}'.format(
-        role=role, prefix=prefix, full_name=full_name, formatted_args=formatted_args)
+    return '{full_name}{formatted_args}'.format(full_name=full_name,
+                                                formatted_args=formatted_args)
 
 
 def process_signature(app, what: str, name: str, obj, options, signature, return_annotation):
