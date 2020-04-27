@@ -421,22 +421,16 @@ def process_docstring(app, what, name, obj, options, lines):
             searchfor_type = ':type {}:'.format(argname)
             insert_index = None
 
-            append_opt = ''
-            do_not_add = False
+            type_manual = False
             for i, line in enumerate(lines):
                 if line.startswith(searchfor_type):
                     end = line[len(searchfor_type):].strip()
-                    if end == 'optional':
-                        append_opt = ', optional'
-                        lines.pop(i)
-                    elif end == '':
+                    if end == '':
                         lines.pop(i)
                     else:
-                        do_not_add = True
+                        type_manual = True
                     break
 
-            if do_not_add:
-                continue
             for i, line in enumerate(lines):
                 if line.startswith(searchfor):
                     insert_index = i
@@ -446,11 +440,11 @@ def process_docstring(app, what, name, obj, options, lines):
                 lines.append(searchfor)
                 insert_index = len(lines)
 
-            if insert_index is not None:
+            if insert_index is not None and not type_manual:
                 lines.insert(
                     insert_index,
                     ':type {}: {}'.format(argname,
-                                          formatted_annotation + append_opt)
+                                          formatted_annotation)
                 )
 
         if 'return' in type_hints and not inspect.isclass(original_obj):
