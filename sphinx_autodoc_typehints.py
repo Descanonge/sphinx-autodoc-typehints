@@ -7,6 +7,8 @@ from typing import TypeVar, Any, AnyStr, Tuple
 from sphinx.util import logging
 from sphinx.util.inspect import signature, stringify_signature
 
+import tomate
+
 logger = logging.getLogger(__name__)
 pydata_annotations = {'Any', 'AnyStr', 'Callable', 'ClassVar', 'Literal', 'NoReturn', 'Optional',
                       'Tuple', 'Union'}
@@ -146,6 +148,9 @@ def process_signature(app, what: str, name: str, obj, options, sign, return_anno
     original_obj = obj
     if inspect.isclass(obj):
         obj = getattr(obj, '__init__', getattr(obj, '__new__', None))
+
+    if isinstance(obj, tomate.filegroup.scanner.ScannerCS):
+        obj = obj.func
 
     if not getattr(obj, '__annotations__', None):
         return
@@ -400,6 +405,9 @@ def process_docstring(app, what, name, obj, options, lines):
     original_obj = obj
     if isinstance(obj, property):
         obj = obj.fget
+
+    if isinstance(obj, tomate.filegroup.scanner.ScannerCS):
+        obj = obj.func
 
     if callable(obj):
         if inspect.isclass(obj):
